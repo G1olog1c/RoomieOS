@@ -31,41 +31,41 @@ const App: React.FC = () => {
   }
 
   return (
-    <Router>
+    <Router basename="/RoomieOS">
       <Routes>
-        <Route 
-          path="/login" 
-          element={!user ? <Auth /> : <Navigate to="/" replace />} 
+        <Route
+          path="/login"
+          element={!user ? <Auth /> : <Navigate to="/" replace />}
         />
-        <Route 
-          path="/finanse" 
+        <Route
+          path="/finanse"
           element={
             user ? (
               currentFlat ? <ExpensesPage /> : <FlatSetup />
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        <Route 
-          path="/zakupy" 
+        <Route
+          path="/zakupy"
           element={
             user ? (
               currentFlat ? <ShoppingPage /> : <FlatSetup />
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             user ? (
               currentFlat ? <Dashboard /> : <FlatSetup />
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
       </Routes>
     </Router>
