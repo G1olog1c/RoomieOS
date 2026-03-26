@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Home, LogOut } from 'lucide-react';
+import { Home, LogOut, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useFlatStore } from '../store/flatStore';
+import { SettingsModal } from '../components/SettingsModal';
 
 export const Dashboard: React.FC = () => {
   const { user, signOut } = useAuthStore();
   const { currentFlat } = useFlatStore();
   const [email, setEmail] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (user) setEmail(user.email || '');
@@ -41,6 +43,9 @@ export const Dashboard: React.FC = () => {
           <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             Zalogowano jako: <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
           </span>
+          <button className="btn-secondary" onClick={() => setShowSettings(true)} title="Ustawienia">
+            <Settings size={16} />
+          </button>
           <button className="btn-secondary" onClick={handleSignOut}>
             <LogOut size={16} />
             Wyloguj
@@ -73,6 +78,8 @@ export const Dashboard: React.FC = () => {
           </Link>
         </div>
       </main>
+
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 };

@@ -21,6 +21,7 @@ interface FlatState {
   fetchFlat: () => Promise<void>;
   createFlat: (name: string) => Promise<boolean>;
   joinFlat: (inviteCode: string) => Promise<boolean>;
+  leaveFlat: () => Promise<void>;
   clearFlat: () => void;
 }
 
@@ -128,11 +129,36 @@ export const useFlatStore = create<FlatState>((set) => ({
       
       await useFlatStore.getState().fetchFlat();
       return true;
-      return true;
     } catch (err: any) {
       console.error(err);
       set({ error: err.message, isLoading: false });
       return false;
+    }
+  },
+
+  leaveFlat: async () => {
+    set({ isLoading: true, error: null });
+    const user = useAuthStore.getState().user;
+    const currentFlat = useFlatStore.getState().currentFlat;
+
+    if (!user || !currentFlat) {
+      throw new Error('Brak danych użytkownika lub pokoju.');
+    }
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('flat_members')
+        .delete()
+        .eq('flat_id', currentFlat.id)
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      set({ currentFlat: null, members: [], isLoading: false });
+    } catch (err: any) {
+      console.error(err);
+      set({ error: err.message, isLoading: false });
+      throw new Error(err.message || 'Błąd podczas opuszczania pokoju.');
     }
   },
 
