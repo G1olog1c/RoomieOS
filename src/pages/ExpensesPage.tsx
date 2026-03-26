@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useExpenseStore } from '../store/expenseStore';
 import { useFlatStore } from '../store/flatStore';
 import { useAuthStore } from '../store/authStore';
-import { ArrowLeft, Plus, CircleDollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, CircleDollarSign, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const ExpensesPage: React.FC = () => {
@@ -13,6 +13,7 @@ export const ExpensesPage: React.FC = () => {
     const [title, setTitle] = useState('');
     const [amount, setAmount] = useState('');
     const [isAdding, setIsAdding] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
     
     useEffect(() => {
         fetchExpenses();
@@ -20,15 +21,28 @@ export const ExpensesPage: React.FC = () => {
     
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
+        setValidationError(null);
+        
+        if (!title.trim()) {
+            setValidationError('Tytuł wydatku nie może być pusty.');
+            return;
+        }
+
         const numAmount = parseFloat(amount);
-        if (!title || Number.isNaN(numAmount) || numAmount <= 0) return;
+        if (Number.isNaN(numAmount) || numAmount <= 0) {
+            setValidationError('Podaj poprawną kwotę większą od zera.');
+            return;
+        }
         
         const memberIds = members.map(m => m.user_id);
-        const success = await addExpense(title, numAmount, memberIds);
+        const success = await addExpense(title.trim(), numAmount, memberIds);
         if (success) {
             setTitle('');
             setAmount('');
             setIsAdding(false);
+            setValidationError(null);
+        } else {
+            setValidationError('Wystąpił błąd podczas dodawania wydatku.');
         }
     };
     
@@ -109,6 +123,12 @@ export const ExpensesPage: React.FC = () => {
                     {isAdding && (
                         <div className="animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid var(--surface-border)' }}>
                             <h4 style={{ marginBottom: '1rem' }}>Nowy wydatek</h4>
+                            {validationError && (
+                                <div className="error-message" style={{ marginBottom: '1rem', marginTop: 0 }}>
+                                    <AlertCircle size={16} />
+                                    <span>{validationError}</span>
+                                </div>
+                            )}
                             <form onSubmit={handleAdd}>
                                 <div className="form-group">
                                     <label>Zapas, Usługa, itp. (Tytuł)</label>

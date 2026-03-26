@@ -10,6 +10,7 @@ interface AuthState {
   setSession: (session: Session | null) => void;
   signOut: () => Promise<void>;
   initialize: () => Promise<void>;
+  updateProfile: (displayName: string) => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -33,6 +34,23 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (e) {
       console.error(e);
       set({ isLoading: false });
+    }
+  },
+  updateProfile: async (displayName: string) => {
+    try {
+      set({ isLoading: true });
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          display_name: displayName
+        }
+      });
+      if (error) throw error;
+      set({ user: data.user, isLoading: false });
+      return true;
+    } catch (e) {
+      console.error(e);
+      set({ isLoading: false });
+      return false;
     }
   }
 }));

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useShoppingStore } from '../store/shoppingStore';
-import { ArrowLeft, Plus, Check, ShoppingCart, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Check, ShoppingCart, Trash2, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const ShoppingPage: React.FC = () => {
     const { items, isLoading, fetchItems, addItem, toggleItemStatus, deleteItem } = useShoppingStore();
     const [newItemTitle, setNewItemTitle] = useState('');
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchItems();
@@ -13,11 +14,19 @@ export const ShoppingPage: React.FC = () => {
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newItemTitle.trim()) return;
+        setValidationError(null);
+
+        if (!newItemTitle.trim()) {
+            setValidationError('Nazwa produktu nie może być pusta.');
+            return;
+        }
         
-        const success = await addItem(newItemTitle);
+        const success = await addItem(newItemTitle.trim());
         if (success) {
             setNewItemTitle('');
+            setValidationError(null);
+        } else {
+            setValidationError('Wystąpił błąd podczas dodawania produktu.');
         }
     };
 
@@ -36,6 +45,12 @@ export const ShoppingPage: React.FC = () => {
             </div>
 
             <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+                {validationError && (
+                    <div className="error-message" style={{ marginBottom: '1.25rem', marginTop: 0 }}>
+                        <AlertCircle size={16} />
+                        <span>{validationError}</span>
+                    </div>
+                )}
                 <form onSubmit={handleAdd} style={{ display: 'flex', gap: '1rem' }}>
                     <input 
                         type="text" 

@@ -11,8 +11,14 @@ export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
+    if (!email.trim()) {
+      return 'Adres email jest wymagany.';
+    }
     if (!email.includes('@')) {
       return 'Podaj poprawny adres email.';
+    }
+    if (!password) {
+      return 'Hasło jest wymagane.';
     }
     if (password.length < 6) {
       return 'Hasło musi zawierać co najmniej 6 znaków.';

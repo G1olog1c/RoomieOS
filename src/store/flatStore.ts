@@ -11,6 +11,9 @@ export interface Flat {
 export interface FlatMember {
   user_id: string;
   role: string;
+  email?: string;
+  display_name?: string;
+  avatar_url?: string;
 }
 
 interface FlatState {
@@ -21,6 +24,8 @@ interface FlatState {
   fetchFlat: () => Promise<void>;
   createFlat: (name: string) => Promise<boolean>;
   joinFlat: (inviteCode: string) => Promise<boolean>;
+  leaveFlat: () => Promise<boolean>;
+  removeMember: (userId: string) => Promise<boolean>;
   clearFlat: () => void;
 }
 
@@ -57,12 +62,20 @@ export const useFlatStore = create<FlatState>((set) => ({
       }
 
       if (memberData && memberData.flats) {
-        const { data: allMembers } = await supabase
-          .from('flat_members')
-          .select('user_id, role')
-          .eq('flat_id', memberData.flat_id);
+        const { data: allMembers, error: rpcError } = await supabase
+          .rpc('get_flat_members_profiles', { p_flat_id: memberData.flat_id });
           
-        set({ currentFlat: memberData.flats as unknown as Flat, members: allMembers || [], isLoading: false });
+        if (rpcError) {
+            console.error('Błąd pobierania profili (RPC):', rpcError);
+            // Awaryjnie zwykły select
+            const { data: fallbackMembers } = await supabase
+              .from('flat_members')
+              .select('user_id, role')
+              .eq('flat_id', memberData.flat_id);
+            set({ currentFlat: memberData.flats as unknown as Flat, members: fallbackMembers || [], isLoading: false });
+        } else {
+            set({ currentFlat: memberData.flats as unknown as Flat, members: allMembers || [], isLoading: false });
+        }
       } else {
         set({ currentFlat: null, members: [], isLoading: false });
       }
@@ -128,6 +141,59 @@ export const useFlatStore = create<FlatState>((set) => ({
       
       await useFlatStore.getState().fetchFlat();
       return true;
+    } catch (err: any) {
+      console.error(err);
+      set({ error: err.message, isLoading: false });
+      return false;
+    }
+  },
+
+  leaveFlat: async () => {
+    set({ isLoading: true, error: null });
+    const user = useAuthStore.getState().user;
+    const currentFlat = useFlatStore.getState().currentFlat;
+    if (!user || !currentFlat) {
+        set({ isLoading: false });
+        return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('flat_members')
+        .delete()
+        .eq('flat_id', currentFlat.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      set({ currentFlat: null, members: [], isLoading: false });
+      return true;
+    } catch (err: any) {
+      console.error(err);
+      set({ error: err.message, isLoading: false });
+      return false;
+    }
+  },
+
+  removeMember: async (userIdToRemove: string) => {
+    set({ isLoading: true, error: null });
+    const user = useAuthStore.getState().user;
+    const currentFlat = useFlatStore.getState().currentFlat;
+    if (!user || !currentFlat) {
+        set({ isLoading: false });
+        return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('flat_members')
+        .delete()
+        .eq('flat_id', currentFlat.id)
+        .eq('user_id', userIdToRemove);
+
+      if (error) throw error;
+
+      await useFlatStore.getState().fetchFlat();
       return true;
     } catch (err: any) {
       console.error(err);

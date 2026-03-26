@@ -75,3 +75,21 @@ CREATE TABLE IF NOT EXISTS public.shopping_items (
 
 ALTER TABLE public.shopping_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.shopping_items FOR ALL TO authenticated USING (true);
+
+-- Backendowe reguły walidacji (Check Constraints)
+
+-- 1. Mieszkania (Flats)
+ALTER TABLE public.flats ADD CONSTRAINT check_flat_name_not_empty CHECK (trim(name) != '');
+ALTER TABLE public.flats ADD CONSTRAINT check_invite_code_length CHECK (char_length(invite_code) = 6);
+
+-- 2. Wydatki (Expenses)
+ALTER TABLE public.expenses ADD CONSTRAINT check_expense_title_not_empty CHECK (trim(title) != '');
+ALTER TABLE public.expenses ADD CONSTRAINT check_expense_amount_positive CHECK (amount > 0);
+ALTER TABLE public.expense_splits ADD CONSTRAINT check_split_amount_positive CHECK (amount > 0);
+
+-- 3. Zakupy (Shopping Items)
+ALTER TABLE public.shopping_items ADD CONSTRAINT check_shopping_title_not_empty CHECK (trim(title) != '');
+
+-- 4. Obowiązki (Chores) i Notatki (Notes)
+ALTER TABLE public.chores ADD CONSTRAINT check_chore_title_not_empty CHECK (trim(title) != '');
+ALTER TABLE public.notes ADD CONSTRAINT check_note_content_not_empty CHECK (trim(content) != '');

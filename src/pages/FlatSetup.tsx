@@ -8,18 +8,31 @@ export const FlatSetup: React.FC = () => {
   const [flatName, setFlatName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const { createFlat, joinFlat, isLoading, error } = useFlatStore();
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { signOut } = useAuthStore();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!flatName.trim()) return;
-    await createFlat(flatName);
+    setValidationError(null);
+    if (!flatName.trim()) {
+      setValidationError('Nazwa mieszkania nie może być pusta.');
+      return;
+    }
+    await createFlat(flatName.trim());
   };
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteCode.trim()) return;
-    await joinFlat(inviteCode);
+    setValidationError(null);
+    if (!inviteCode.trim()) {
+      setValidationError('Kod zaproszenia nie może być pusty.');
+      return;
+    }
+    if (inviteCode.trim().length !== 6) {
+      setValidationError('Kod zaproszenia musi składać się z 6 znaków.');
+      return;
+    }
+    await joinFlat(inviteCode.trim().toUpperCase());
   };
 
   return (
@@ -51,10 +64,10 @@ export const FlatSetup: React.FC = () => {
           </button>
         </div>
 
-        {error && (
+        {(error || validationError) && (
           <div className="error-message">
             <AlertCircle size={16} />
-            <span>{error}</span>
+            <span>{validationError || error}</span>
           </div>
         )}
 

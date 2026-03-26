@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ShoppingPage } from './pages/ShoppingPage';
 import { FlatSetup } from './pages/FlatSetup';
+import { ProfilePage } from './pages/ProfilePage';
 import { useAuthStore } from './store/authStore';
 import { useFlatStore } from './store/flatStore';
 
@@ -31,7 +32,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <Router basename="/RoomieOS">
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route
           path="/login"
@@ -57,8 +58,18 @@ const App: React.FC = () => {
             )
           }
         />
-        <Route
-          path="/"
+        <Route 
+          path="/profil" 
+          element={
+            user ? (
+              <ProfilePage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        <Route 
+          path="/" 
           element={
             user ? (
               currentFlat ? <Dashboard /> : <FlatSetup />
