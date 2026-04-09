@@ -3,11 +3,13 @@ import { Home, LogOut, Settings, Users, User, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useFlatStore } from '../store/flatStore';
+import { SettingsModal } from '../components/SettingsModal';
 
 export const Dashboard: React.FC = () => {
   const { user, signOut } = useAuthStore();
   const { currentFlat, members, removeMember } = useFlatStore();
   const [email, setEmail] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (user) setEmail(user.email || '');
@@ -44,11 +46,9 @@ export const Dashboard: React.FC = () => {
           <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             Zalogowano jako: <strong style={{ color: 'var(--text-primary)' }}>{user?.user_metadata?.display_name || email}</strong>
           </span>
-          <Link to="/profil">
-            <button className="btn-secondary" style={{ padding: '0.5rem', width: '36px', height: '36px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <Settings size={18} />
-            </button>
-          </Link>
+          <button className="btn-secondary" onClick={() => setIsSettingsOpen(true)} style={{ padding: '0.5rem', width: '36px', height: '36px', display: 'flex', justifyContent: 'center', alignItems: 'center' }} title="Ustawienia">
+            <Settings size={18} />
+          </button>
           <button className="btn-secondary" onClick={handleSignOut} style={{ padding: '0.5rem 1rem' }}>
             <LogOut size={16} />
             Wyloguj
@@ -113,6 +113,11 @@ export const Dashboard: React.FC = () => {
           </Link>
         </div>
       </main>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 };
