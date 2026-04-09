@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Mail, Lock, AlertCircle, Home } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Home, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import './Auth.css';
 
 export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -63,9 +64,32 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <div className="glass-panel animate-fade-in" style={{ padding: '3rem 2rem', width: '100%', maxWidth: '440px' }}>
-        
+    <div className="auth-page-container">
+      <div className="auth-left">
+        <div className="auth-left-content">
+          <h1 className="auth-title">RoomieOS</h1>
+          <p className="auth-desc">
+            Twoje wspólne mieszkanie zorganizowane jak system operacyjny. <br /><br />
+            Śledź finanse, odhaczaj współdzielone zakupy i utrzymuj najlepszy porządek razem ze swoimi lokatorami, 
+            bez niepotrzebnych problemów i niejasności w rozliczeniach.
+          </p>
+          <ul style={{ listStyle: 'none', padding: 0, marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <li className="auth-list-item" style={{ animationDelay: '0.4s' }}>
+                <CheckCircle size={22} color="var(--primary-color)" /> Pełna transparentność zrzutek i wydatków
+            </li>
+            <li className="auth-list-item" style={{ animationDelay: '0.5s' }}>
+                <CheckCircle size={22} color="var(--primary-color)" /> Synchroniczna wspólna lista zakupów
+            </li>
+            <li className="auth-list-item" style={{ animationDelay: '0.6s' }}>
+                <CheckCircle size={22} color="var(--primary-color)" /> Prosty zarząd mieszkańcami chroniony kodem
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="auth-right">
+        <div className="auth-form-wrapper">
+          <div className="glass-panel" style={{ padding: '3rem 2.5rem', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', marginBottom: '1.25rem' }}>
             <Home size={32} color="var(--primary-color)" />
@@ -144,6 +168,8 @@ export const Auth: React.FC = () => {
           </button>
         </div>
         
+          </div>
+        </div>
       </div>
     </div>
   );

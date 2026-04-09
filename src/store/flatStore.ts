@@ -18,10 +18,12 @@ export interface FlatMember {
 
 interface FlatState {
   currentFlat: Flat | null;
+  userFlats: Flat[];
   members: FlatMember[];
   isLoading: boolean;
   error: string | null;
   fetchFlat: () => Promise<void>;
+  setCurrentFlat: (flatId: string) => Promise<void>;
   createFlat: (name: string) => Promise<boolean>;
   joinFlat: (inviteCode: string) => Promise<boolean>;
   leaveFlat: () => Promise<boolean>;
@@ -29,8 +31,9 @@ interface FlatState {
   clearFlat: () => void;
 }
 
-export const useFlatStore = create<FlatState>((set) => ({
+export const useFlatStore = create<FlatState>((set, get) => ({
   currentFlat: null,
+  userFlats: [],
   members: [],
   isLoading: true,
   error: null,
@@ -39,7 +42,7 @@ export const useFlatStore = create<FlatState>((set) => ({
     set({ isLoading: true, error: null });
     const user = useAuthStore.getState().user;
     if (!user) {
-      set({ currentFlat: null, isLoading: false });
+      set({ currentFlat: null, userFlats: [], isLoading: false });
       return;
     }
 
@@ -54,31 +57,67 @@ export const useFlatStore = create<FlatState>((set) => ({
             invite_code
           )
         `)
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
-      if (memberError && memberError.code !== 'PGRST116') {
+      if (memberError) {
         throw memberError;
       }
 
-      if (memberData && memberData.flats) {
+      const flats = (memberData || []).map(m => m.flats as unknown as Flat).filter(Boolean);
+      
+      if (flats.length > 0) {
+        const state = get();
+        // Keep current flat if it exists in the list, otherwise pick the first one
+        let selectedFlat = state.currentFlat && flats.find(f => f.id === state.currentFlat!.id) 
+            ? state.currentFlat 
+            : flats[0];
+
         const { data: allMembers, error: rpcError } = await supabase
-          .rpc('get_flat_members_profiles', { p_flat_id: memberData.flat_id });
+          .rpc('get_flat_members_profiles', { p_flat_id: selectedFlat.id });
           
         if (rpcError) {
             console.error('Błąd pobierania profili (RPC):', rpcError);
-            // Awaryjnie zwykły select
             const { data: fallbackMembers } = await supabase
               .from('flat_members')
               .select('user_id, role')
-              .eq('flat_id', memberData.flat_id);
-            set({ currentFlat: memberData.flats as unknown as Flat, members: fallbackMembers || [], isLoading: false });
+              .eq('flat_id', selectedFlat.id);
+            set({ currentFlat: selectedFlat, userFlats: flats, members: fallbackMembers || [], isLoading: false });
         } else {
-            set({ currentFlat: memberData.flats as unknown as Flat, members: allMembers || [], isLoading: false });
+            set({ currentFlat: selectedFlat, userFlats: flats, members: allMembers || [], isLoading: false });
         }
       } else {
-        set({ currentFlat: null, members: [], isLoading: false });
+        set({ currentFlat: null, userFlats: [], members: [], isLoading: false });
       }
+    } catch (err: any) {
+      console.error(err);
+      set({ error: err.message, isLoading: false });
+    }
+  },
+
+  setCurrentFlat: async (flatId: string) => {
+    set({ isLoading: true, error: null });
+    const { userFlats } = get();
+    const targetFlat = userFlats.find((f: Flat) => f.id === flatId);
+    
+    if (!targetFlat) {
+       set({ isLoading: false, error: 'Nie znaleziono mieszkania' });
+       return;
+    }
+
+    try {
+        const { data: allMembers, error: rpcError } = await supabase
+          .rpc('get_flat_members_profiles', { p_flat_id: flatId });
+          
+        if (rpcError) {
+            console.error('Błąd pobierania profili (RPC):', rpcError);
+            const { data: fallbackMembers } = await supabase
+              .from('flat_members')
+              .select('user_id, role')
+              .eq('flat_id', flatId);
+            set({ currentFlat: targetFlat, members: fallbackMembers || [], isLoading: false });
+        } else {
+            set({ currentFlat: targetFlat, members: allMembers || [], isLoading: false });
+        }
     } catch (err: any) {
       console.error(err);
       set({ error: err.message, isLoading: false });
@@ -107,7 +146,8 @@ export const useFlatStore = create<FlatState>((set) => ({
 
       if (memberError) throw memberError;
 
-      set({ currentFlat: flatData as Flat, members: [{ user_id: user.id, role: 'admin' }], isLoading: false });
+      await useFlatStore.getState().fetchFlat();
+      await useFlatStore.getState().setCurrentFlat(flatData.id);
       return true;
     } catch (err: any) {
       console.error(err);
@@ -140,6 +180,7 @@ export const useFlatStore = create<FlatState>((set) => ({
       }
       
       await useFlatStore.getState().fetchFlat();
+      await useFlatStore.getState().setCurrentFlat(flatData.id);
       return true;
     } catch (err: any) {
       console.error(err);
@@ -166,7 +207,11 @@ export const useFlatStore = create<FlatState>((set) => ({
 
       if (error) throw error;
 
-      set({ currentFlat: null, members: [], isLoading: false });
+      // Force refreshing the flat to either select next available flat or clear it if 0
+      const store = useFlatStore.getState();
+      // Null out currentFlat initially so fetchFlat picks a new one
+      set({ currentFlat: null, isLoading: true });
+      await store.fetchFlat();
       return true;
     } catch (err: any) {
       console.error(err);
@@ -202,5 +247,5 @@ export const useFlatStore = create<FlatState>((set) => ({
     }
   },
 
-  clearFlat: () => set({ currentFlat: null, members: [], error: null })
+  clearFlat: () => set({ currentFlat: null, userFlats: [], members: [], error: null })
 }));

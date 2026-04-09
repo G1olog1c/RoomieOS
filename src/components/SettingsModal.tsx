@@ -12,7 +12,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
-  const { currentFlat, members, leaveFlat, joinFlat, createFlat } = useFlatStore();
+  const { currentFlat, userFlats, members, leaveFlat, joinFlat, createFlat, setCurrentFlat } = useFlatStore();
   
   const [activeTab, setActiveTab] = useState<'user' | 'rooms'>('user');
   
@@ -281,27 +281,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           {activeTab === 'rooms' && (
             <div className="tab-pane animate-fade-in">
               <section className="settings-section">
-                <h3>Twój Aktualny Pokój</h3>
+                <h3>Twoje Pokoje</h3>
                 {roomMsg && (
                   <div className={`message ${roomMsg.type}`}>
                     {roomMsg.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
                     {roomMsg.text}
                   </div>
                 )}
-                {currentFlat ? (
-                  <div className="current-room-card">
-                    <div className="room-info">
-                      <h4>{currentFlat.name}</h4>
-                      <p>Liczba osób: <strong>{members.length}</strong></p>
-                      <div className="invite-box">
-                        <span>Kod zaproszenia:</span>
-                        <code className="invite-code">{currentFlat.invite_code}</code>
-                      </div>
-                    </div>
-                    <button className="btn-danger" onClick={handleLeaveRoom}>
-                      <LogOut size={16} /> Opuść pokój
-                    </button>
-                  </div>
+                {userFlats && userFlats.length > 0 ? (
+                  <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {userFlats.map(flat => {
+                      const isActive = currentFlat?.id === flat.id;
+                      return (
+                        <li key={flat.id} className="current-room-card" style={isActive ? { borderColor: 'var(--primary-color)' } : {}}>
+                          <div className="room-info">
+                            <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {flat.name}
+                                {isActive && <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: 'var(--primary-color)', color: 'white', borderRadius: '4px' }}>Aktywny</span>}
+                            </h4>
+                            {isActive ? (
+                                <>
+                                  <p>Liczba osób: <strong>{members.length}</strong></p>
+                                  <div className="invite-box">
+                                    <span>Kod zaproszenia:</span>
+                                    <code className="invite-code">{flat.invite_code}</code>
+                                  </div>
+                                </>
+                            ) : (
+                                <p style={{ color: 'var(--text-secondary)' }}>Kod zaproszenia: {flat.invite_code}</p>
+                            )}
+                          </div>
+                          {isActive ? (
+                            <button className="btn-danger" onClick={handleLeaveRoom}>
+                              <LogOut size={16} /> Opuść pokój
+                            </button>
+                          ) : (
+                            <button className="btn-secondary" onClick={() => { setCurrentFlat(flat.id); onClose(); }}>
+                              Przełącz
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 ) : (
                   <div className="no-room-info">
                     <p>Nie należysz jeszcze do żadnego pokoju.</p>
