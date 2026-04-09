@@ -49,6 +49,13 @@ export const ExpensesPage: React.FC = () => {
     const iOweSplits = splits.filter(s => s.user_id === user?.id && !s.is_paid && expenses.find(e => e.id === s.expense_id)?.payer_id !== user?.id);
     const owedToMeSplits = splits.filter(s => expenses.find(e => e.id === s.expense_id)?.payer_id === user?.id && !s.is_paid && s.user_id !== user?.id);
 
+    const getMemberName = (userId: string | undefined) => {
+        if (!userId) return 'Nieznany element';
+        if (userId === user?.id) return 'Ty';
+        const member = members.find(m => m.user_id === userId);
+        return member?.display_name || member?.email || `Lokator ${userId.substring(0,4)}`;
+    };
+
     return (
         <div className="main-content animate-fade-in" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -73,7 +80,7 @@ export const ExpensesPage: React.FC = () => {
                                         <li key={split.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', borderRadius: '12px', marginBottom: '0.75rem' }}>
                                             <div>
                                                 <strong>{exp?.title}</strong><br/>
-                                                <small style={{ color: 'var(--text-secondary)' }}>Osobie: Lokator {exp?.payer_id.substring(0,4)}</small>
+                                                <small style={{ color: 'var(--text-secondary)' }}>Osobie: {getMemberName(exp?.payer_id)}</small>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                 <span style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{split.amount.toFixed(2)} zł</span>
@@ -96,7 +103,7 @@ export const ExpensesPage: React.FC = () => {
                                         <li key={split.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '12px', marginBottom: '0.75rem' }}>
                                             <div>
                                                 <strong>{exp?.title}</strong><br/>
-                                                <small style={{ color: 'var(--text-secondary)' }}>Wiszący: Lokator {split.user_id.substring(0,4)}</small>
+                                                <small style={{ color: 'var(--text-secondary)' }}>Wiszący: {getMemberName(split.user_id)}</small>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                 <span style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{split.amount.toFixed(2)} zł</span>
@@ -154,7 +161,7 @@ export const ExpensesPage: React.FC = () => {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <h4 style={{ margin: '0 0 0.25rem 0' }}>{exp.title}</h4>
-                                        <small style={{ color: 'var(--text-secondary)' }}>Kupił: {exp.payer_id === user?.id ? 'Ty' : `Lokator ${exp.payer_id.substring(0,4)}`}</small>
+                                        <small style={{ color: 'var(--text-secondary)' }}>Kupił: {getMemberName(exp.payer_id)}</small>
                                     </div>
                                     <span style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>{exp.amount.toFixed(2)} zł</span>
                                 </li>
