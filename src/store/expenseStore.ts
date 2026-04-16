@@ -9,6 +9,8 @@ export interface Expense {
   payer_id: string;
   amount: number;
   title: string;
+  expense_type?: string | null;
+  source_expense_ids?: string[] | null;
   created_at: string;
 }
 
@@ -18,6 +20,7 @@ export interface ExpenseSplit {
   user_id: string;
   amount: number;
   is_paid: boolean;
+  note?: string;
   created_at: string;
 }
 
@@ -27,8 +30,13 @@ interface ExpenseState {
   isLoading: boolean;
   error: string | null;
   fetchExpenses: () => Promise<void>;
-  addExpense: (title: string, amount: number, splitWithIds: string[]) => Promise<boolean>;
-  settleDebt: (splitId: string) => Promise<boolean>;
+  addExpense: (title: string, amount: number, splitWithIds: string[], expenseType: 'Zakupy' | 'Rachunki' | 'Inne') => Promise<boolean>;
+  settleDebt: (splitId: string, note?: string) => Promise<boolean>;
+  calculateOptimalDebts: () => { from: string; to: string; amount: number }[];
+  simplifyDebts: (opts?: { settleNewDebts?: boolean; settleNote?: string }) => Promise<{
+    insertedDebts: { expenseId: string; splitId: string; from: string; to: string; amount: number }[];
+    sourceExpenseIds: string[];
+  } | false>;
 }
 
 export const useExpenseStore = create<ExpenseState>((set, get) => ({
@@ -70,7 +78,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     }
   },
 
-  addExpense: async (title, amount, splitWithIds) => {
+  addExpense: async (title, amount, splitWithIds, expenseType) => {
     const flat = useFlatStore.getState().currentFlat;
     const user = useAuthStore.getState().user;
     if (!flat || !user) return false;
@@ -83,7 +91,8 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
           flat_id: flat.id,
           payer_id: user.id,
           amount: amount,
-          title: title
+          title: title,
+          expense_type: expenseType
         }])
         .select()
         .single();
@@ -112,12 +121,15 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     }
   },
 
-  settleDebt: async (splitId) => {
+  settleDebt: async (splitId, note) => {
     set({ isLoading: true, error: null });
     try {
+      const updateData: any = { is_paid: true };
+      if (note) updateData.note = note;
+
       const { error } = await supabase
         .from('expense_splits')
-        .update({ is_paid: true })
+        .update(updateData)
         .eq('id', splitId);
         
       if (error) throw error;
@@ -128,5 +140,158 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       set({ error: err.message, isLoading: false });
       return false;
     }
+  },
+
+  calculateOptimalDebts: () => {
+    const { expenses, splits } = get();
+    // 1. Calculate net balances for each user
+    const balances: Record<string, number> = {};
+    
+    // Only consider UNPAID splits where user_id != payer_id
+    const unresolvedSplits = splits.filter(s => !s.is_paid);
+    
+    for (const split of unresolvedSplits) {
+        const expense = expenses.find(e => e.id === split.expense_id);
+        if (!expense) continue;
+        if (expense.payer_id === split.user_id) continue;
+        
+        // payer gets money back (+), split user owes money (-)
+        balances[expense.payer_id] = (balances[expense.payer_id] || 0) + split.amount;
+        balances[split.user_id] = (balances[split.user_id] || 0) - split.amount;
+    }
+
+    // 2. Separate into debtors and creditors
+    const debtors = Object.entries(balances)
+      .filter(([_, amount]) => amount < -0.01)
+      .map(([userId, amount]) => ({ userId, amount: amount }));
+      
+    const creditors = Object.entries(balances)
+      .filter(([_, amount]) => amount > 0.01)
+      .map(([userId, amount]) => ({ userId, amount: amount }));
+
+    // 3. Greedily match them up
+    let i = 0;
+    let j = 0;
+    const optimalTransactions: { from: string; to: string; amount: number }[] = [];
+
+    while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        
+        let settleAmount = Math.min(Math.abs(debtor.amount), creditor.amount);
+        settleAmount = parseFloat(settleAmount.toFixed(2));
+        
+        if (settleAmount > 0) {
+            optimalTransactions.push({
+                from: debtor.userId,
+                to: creditor.userId,
+                amount: settleAmount
+            });
+        }
+        
+        debtor.amount += settleAmount;
+        creditor.amount -= settleAmount;
+        
+        if (Math.abs(debtor.amount) < 0.01) i++;
+        if (Math.abs(creditor.amount) < 0.01) j++;
+    }
+
+    return optimalTransactions;
+  },
+
+  simplifyDebts: async (opts) => {
+      const flat = useFlatStore.getState().currentFlat;
+      if (!flat) return false;
+      
+      set({ isLoading: true, error: null });
+      try {
+          const optimal = get().calculateOptimalDebts();
+          const { splits } = get();
+          const unpaidSplits = splits.filter(s => !s.is_paid);
+          const unresolvedOldSplitIds = unpaidSplits.map(s => s.id);
+          const sourceExpenseIds = Array.from(new Set(unpaidSplits.map(s => s.expense_id)));
+
+          // 1. Mark existing unpaid splits as paid (resolved by smart settlement)
+          const unpaidDivIds = unresolvedOldSplitIds;
+          
+          if (unpaidDivIds.length > 0) {
+              const { error: markError } = await supabase
+                  .from('expense_splits')
+                  .update({ 
+                      is_paid: true, 
+                      note: 'Rozliczone automatycznie (Smart Settlement)' 
+                  })
+                  .in('id', unpaidDivIds);
+                  
+              if (markError) throw markError;
+          }
+
+          if (optimal.length === 0) {
+              await get().fetchExpenses();
+              return { insertedDebts: [], sourceExpenseIds };
+          }
+
+          // 2. Insert new consolidated expenses and splits
+          // Each optimal transaction is conceptually: Debtor pays Creditor
+          // To map this to Expenses: Creditor is the 'payer' (they are owed money)
+          // Debtor is the one with the 'split'
+          const insertedDebts: { expenseId: string; splitId: string; from: string; to: string; amount: number }[] = [];
+          for (const transaction of optimal) {
+              const { data: expData, error: expError } = await supabase
+                  .from('expenses')
+                  .insert([{
+                      flat_id: flat.id,
+                      payer_id: transaction.to, // the person receiving money
+                      amount: transaction.amount,
+                      title: 'Uproszczenie Długów',
+                      expense_type: 'Inne',
+                      source_expense_ids: sourceExpenseIds
+                  }])
+                  .select()
+                  .single();
+                  
+              if (expError) throw expError;
+
+              const { data: splitData, error: splitError } = await supabase
+                  .from('expense_splits')
+                  .insert([{
+                      expense_id: expData.id,
+                      user_id: transaction.from, // the person who owes
+                      amount: transaction.amount,
+                      is_paid: false,
+                      note: 'Wynik Smart Settlement'
+                  }])
+                  .select()
+                  .single();
+                  
+              if (splitError) throw splitError;
+
+              insertedDebts.push({
+                expenseId: expData.id,
+                splitId: splitData.id,
+                from: transaction.from,
+                to: transaction.to,
+                amount: transaction.amount
+              });
+          }
+
+          // Optional: immediately mark the newly inserted debts as paid.
+          if (opts?.settleNewDebts && insertedDebts.length > 0) {
+            const idsToSettle = insertedDebts.map(d => d.splitId);
+            const note = opts.settleNote || 'Zapłacone (Smart Settlement)';
+            const { error: settleError } = await supabase
+              .from('expense_splits')
+              .update({ is_paid: true, note })
+              .in('id', idsToSettle);
+            if (settleError) throw settleError;
+          }
+
+          await get().fetchExpenses();
+          return { insertedDebts, sourceExpenseIds };
+      } catch(err: any) {
+          console.error(err);
+          set({ error: err.message, isLoading: false });
+          return false;
+      }
   }
 }));

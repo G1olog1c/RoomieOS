@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS public.flats (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
@@ -10,6 +12,8 @@ CREATE TABLE IF NOT EXISTS public.flat_members (
     flat_id UUID REFERENCES public.flats(id) ON DELETE CASCADE,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     role TEXT CHECK (role IN ('admin', 'member')) DEFAULT 'member',
+    last_seen_expenses TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    last_seen_shopping TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(flat_id, user_id)
 );
@@ -20,6 +24,9 @@ CREATE TABLE IF NOT EXISTS public.expenses (
     payer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     amount DECIMAL(10, 2) NOT NULL,
     title TEXT NOT NULL,
+    expense_type TEXT NOT NULL DEFAULT 'Zakupy',
+    -- For Smart Settlement: list of expense IDs that were consolidated in the run
+    source_expense_ids UUID[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -29,8 +36,13 @@ CREATE TABLE IF NOT EXISTS public.expense_splits (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     amount DECIMAL(10, 2) NOT NULL,
     is_paid BOOLEAN DEFAULT FALSE,
+    note TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Smart Settlement / Historia Rozliczeń - dodatkowe pola w expenses
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS expense_type TEXT NOT NULL DEFAULT 'Zakupy';
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS source_expense_ids UUID[];
 
 CREATE TABLE IF NOT EXISTS public.chores (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -76,6 +88,32 @@ CREATE TABLE IF NOT EXISTS public.shopping_items (
 ALTER TABLE public.shopping_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.shopping_items FOR ALL TO authenticated USING (true);
 
+-- RPC: profile list for flat members (Dashboard / UI)
+DROP FUNCTION IF EXISTS public.get_flat_members_profiles(UUID);
+
+CREATE FUNCTION public.get_flat_members_profiles(p_flat_id UUID)
+RETURNS TABLE (
+    user_id UUID,
+    role TEXT,
+    email TEXT,
+    display_name TEXT,
+    avatar_url TEXT
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+  SELECT
+    fm.user_id,
+    fm.role,
+    au.email,
+    au.raw_user_meta_data->>'display_name' AS display_name,
+    au.raw_user_meta_data->>'avatar_url' AS avatar_url
+  FROM public.flat_members fm
+  JOIN auth.users au ON au.id = fm.user_id
+  WHERE fm.flat_id = p_flat_id;
+$$;
+
 -- Backendowe reguły walidacji (Check Constraints)
 
 -- 1. Mieszkania (Flats)
@@ -85,6 +123,8 @@ ALTER TABLE public.flats ADD CONSTRAINT check_invite_code_length CHECK (char_len
 -- 2. Wydatki (Expenses)
 ALTER TABLE public.expenses ADD CONSTRAINT check_expense_title_not_empty CHECK (trim(title) != '');
 ALTER TABLE public.expenses ADD CONSTRAINT check_expense_amount_positive CHECK (amount > 0);
+ALTER TABLE public.expenses DROP CONSTRAINT IF EXISTS check_expense_type_valid;
+ALTER TABLE public.expenses ADD CONSTRAINT check_expense_type_valid CHECK (expense_type IN ('Zakupy','Rachunki','Inne'));
 ALTER TABLE public.expense_splits ADD CONSTRAINT check_split_amount_positive CHECK (amount > 0);
 
 -- 3. Zakupy (Shopping Items)

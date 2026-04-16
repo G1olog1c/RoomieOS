@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useShoppingStore } from '../store/shoppingStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { ArrowLeft, Plus, Check, ShoppingCart, Trash2, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -8,9 +9,12 @@ export const ShoppingPage: React.FC = () => {
     const [newItemTitle, setNewItemTitle] = useState('');
     const [validationError, setValidationError] = useState<string | null>(null);
 
+    const { markAsSeen } = useNotificationStore();
+
     useEffect(() => {
         fetchItems();
-    }, [fetchItems]);
+        markAsSeen('shopping');
+    }, [fetchItems, markAsSeen]);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();

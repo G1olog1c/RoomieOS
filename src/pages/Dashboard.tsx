@@ -3,17 +3,27 @@ import { Home, LogOut, Settings, Users, User, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useFlatStore } from '../store/flatStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { SettingsModal } from '../components/SettingsModal';
+import { NotificationsModal } from '../components/NotificationsModal';
 
 export const Dashboard: React.FC = () => {
   const { user, signOut } = useAuthStore();
   const { currentFlat, members, removeMember } = useFlatStore();
+  const { expensesRachunkiCount, shoppingCount, shoppingHasNew, fetchCounts } = useNotificationStore();
   const [email, setEmail] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   useEffect(() => {
     if (user) setEmail(user.email || '');
   }, [user]);
+
+  useEffect(() => {
+    if (currentFlat) {
+      fetchCounts();
+    }
+  }, [currentFlat, fetchCounts]);
 
   const currentUserRole = members.find(m => m.user_id === user?.id)?.role;
   const isAdmin = currentUserRole === 'admin';
@@ -64,8 +74,45 @@ export const Dashboard: React.FC = () => {
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
           <Link to="/finanse" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer' }}>
-              <h3>💸 Finanse</h3>
+            <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer', position: 'relative' }}>
+              {expensesRachunkiCount > 0 && (
+                <span
+                  className="notification-badge animate-fade-in"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Masz ${expensesRachunkiCount} nowych rachunków`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsNotificationsOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setIsNotificationsOpen(true);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem',
+                    background: 'var(--success-color)',
+                    color: 'white',
+                    borderRadius: '999px',
+                    width: '28px',
+                    height: '28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    padding: 0,
+                    marginLeft: 0,
+                  }}
+                >
+                  {expensesRachunkiCount}
+                </span>
+              )}
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                 💸 Finanse
+              </h3>
               <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>Wejdź w moduł rozliczeń (Splitwise). Dodaj paragon i sprawdź bilans długów.</p>
             </div>
           </Link>
@@ -106,8 +153,36 @@ export const Dashboard: React.FC = () => {
             </ul>
           </div>
           <Link to="/zakupy" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer' }}>
-              <h3>🛒 Lista zakupów</h3>
+            <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer', position: 'relative' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  🛒 Lista zakupów
+                  {shoppingCount > 0 && (
+                     <span
+                       className="notification-badge animate-fade-in"
+                       role="button"
+                       tabIndex={0}
+                       onClick={(e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         setIsNotificationsOpen(true);
+                       }}
+                       onKeyDown={(e) => {
+                         if (e.key === 'Enter' || e.key === ' ') setIsNotificationsOpen(true);
+                       }}
+                       style={{
+                         background: shoppingHasNew ? 'var(--success-color)' : 'rgba(255, 255, 255, 0.1)',
+                         color: shoppingHasNew ? 'white' : 'var(--text-secondary)',
+                         borderRadius: '12px',
+                         padding: '0.1rem 0.5rem',
+                         fontSize: '0.75rem',
+                         fontWeight: 'bold',
+                         marginLeft: 'auto',
+                         border: shoppingHasNew ? 'none' : '1px solid rgba(255, 255, 255, 0.2)'
+                     }}>
+                         {shoppingCount} {shoppingCount === 1 ? 'rzecz' : (shoppingCount >= 2 && shoppingCount <= 4 ? 'rzeczy' : 'rzeczy')}
+                     </span>
+                 )}
+              </h3>
               <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>Dodawaj braki na wspólną tablicę i odhaczaj po stronie sklepu w czasie rzeczywistym.</p>
             </div>
           </Link>
@@ -117,6 +192,11 @@ export const Dashboard: React.FC = () => {
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+      />
+
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
       />
     </div>
   );
