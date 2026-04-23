@@ -88,7 +88,7 @@ export const ExpenseDetailsContent: React.FC<ExpenseDetailsContentProps> = ({ ex
           Typ: <strong style={{ color: 'var(--text-primary)' }}>{expenseType}</strong>
         </div>
         <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-          {expense.amount.toFixed(2)} zł
+          <span className="money-inline">{expense.amount.toFixed(2)} zł</span>
         </span>
       </div>
 
@@ -133,7 +133,7 @@ export const ExpenseDetailsContent: React.FC<ExpenseDetailsContentProps> = ({ ex
                   <span style={{ fontWeight: 500 }}>{getMemberName(split.user_id)}</span>
                 </div>
                 <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                  {split.amount.toFixed(2)} zł
+                  <span className="money-inline">{split.amount.toFixed(2)} zł</span>
                 </span>
               </div>
 
@@ -208,7 +208,7 @@ export const ExpenseDetailsContent: React.FC<ExpenseDetailsContentProps> = ({ ex
                       day: '2-digit', 
                       month: '2-digit', 
                       year: 'numeric' 
-                    })} • Zapłacił(a): {getMemberName(src.payer_id)} • {src.amount.toFixed(2)} zł
+                    })} • Zapłacił(a): {getMemberName(src.payer_id)} • <span className="money-inline">{src.amount.toFixed(2)} zł</span>
                   </div>
                 </li>
               );

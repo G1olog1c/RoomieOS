@@ -111,7 +111,7 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
                             <td style={{ padding: '0.75rem 0.5rem', color: d.to === user?.id ? 'var(--success-color)' : 'var(--text-primary)', fontWeight: 600 }}>
                               {getMemberName(d.to)}
                             </td>
-                            <td style={{ padding: '0.75rem 0.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{d.amount.toFixed(2)} zł</td>
+                            <td style={{ padding: '0.75rem 0.5rem', fontWeight: 800, color: 'var(--text-primary)' }}><span className="money-inline">{d.amount.toFixed(2)} zł</span></td>
                             <td style={{ padding: '0.75rem 0.5rem' }}>
                               {isSettled ? (
                                 <span style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: 700 }}>Zapłacone</span>
@@ -198,7 +198,7 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
                               <td style={{ padding: '0.75rem 0.5rem', color: t.to === user?.id ? 'var(--success-color)' : 'var(--text-primary)', fontWeight: 600 }}>
                                 {getMemberName(t.to)}
                               </td>
-                              <td style={{ padding: '0.75rem 0.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{t.amount.toFixed(2)} zł</td>
+                              <td style={{ padding: '0.75rem 0.5rem', fontWeight: 800, color: 'var(--text-primary)' }}><span className="money-inline">{t.amount.toFixed(2)} zł</span></td>
                             </tr>
                           ))}
                         </tbody>

@@ -93,7 +93,7 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
           {getMemberName(expense.payer_id)}
         </td>
         <td className="expenses-history-cell expenses-history-amount-cell" style={{ padding: '1rem 0.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          {expense.amount.toFixed(2)} zł
+          <span className="money-inline">{expense.amount.toFixed(2)} zł</span>
         </td>
         <td className="expenses-history-cell" style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>
           <span className={`expenses-history-status-pill ${isOpen ? 'is-open' : 'is-closed'}`}>
@@ -139,7 +139,7 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                   Typ: <strong style={{ color: 'var(--text-primary)' }}>{expenseType}</strong>
                 </div>
                 <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {expense.amount.toFixed(2)} zł
+                  <span className="money-inline">{expense.amount.toFixed(2)} zł</span>
                 </span>
               </div>
 
@@ -184,7 +184,7 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                           <span style={{ fontWeight: 500 }}>{getMemberName(split.user_id)}</span>
                         </div>
                         <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                          {split.amount.toFixed(2)} zł
+                          <span className="money-inline">{split.amount.toFixed(2)} zł</span>
                         </span>
                       </div>
 
@@ -263,7 +263,7 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                               day: '2-digit', 
                               month: '2-digit', 
                               year: 'numeric' 
-                            })} • Zapłacił(a): {getMemberName(src.payer_id)} • {src.amount.toFixed(2)} zł
+                            })} • Zapłacił(a): {getMemberName(src.payer_id)} • <span className="money-inline">{src.amount.toFixed(2)} zł</span>
                           </div>
                         </li>
                       );

@@ -471,6 +471,13 @@ p {
   color: var(--success-color);
 }
 
+.money-inline {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
 .expenses-filters .input-group {
   min-width: 0;
 }

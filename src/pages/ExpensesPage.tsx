@@ -206,7 +206,7 @@ export const ExpensesPage: React.FC = () => {
                                 <AlertCircle size={24} color="var(--error-color)" />
                                 <div>
                                     <strong style={{ color: 'var(--error-color)' }}>Uwaga!</strong>
-                                    <p style={{ margin: 0, fontSize: '0.875rem' }}>Masz {iOweSplits.length} otwarte długi na całkowitą sumę <strong>{totalOwe.toFixed(2)} zł</strong>.</p>
+                                    <p style={{ margin: 0, fontSize: '0.875rem' }}>Masz {iOweSplits.length} otwarte długi na całkowitą sumę <strong className="money-inline">{totalOwe.toFixed(2)} zł</strong>.</p>
                                 </div>
                             </div>
                         )}
@@ -217,7 +217,7 @@ export const ExpensesPage: React.FC = () => {
                                 <div>
                                     <strong style={{ color: 'rgb(245, 158, 11)' }}>Przypomnienie!</strong>
                                     <p style={{ margin: 0, fontSize: '0.875rem' }}>
-                                        Masz {oldOweSplits.length} otwarte długi od ponad 5 dni na sumę <strong>{totalOldOwe.toFixed(2)} zł</strong>.
+                                        Masz {oldOweSplits.length} otwarte długi od ponad 5 dni na sumę <strong className="money-inline">{totalOldOwe.toFixed(2)} zł</strong>.
                                     </p>
                                 </div>
                             </div>
@@ -247,7 +247,7 @@ export const ExpensesPage: React.FC = () => {
                                                     <small style={{ color: 'var(--text-secondary)' }}>Osobie: {getMemberName(exp?.payer_id)}</small>
                                                 </div>
                                                 <div className="expense-balance-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <span style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{split.amount.toFixed(2)} zł</span>
+                                                    <span className="money-inline" style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{split.amount.toFixed(2)} zł</span>
                                                     <button className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', borderRadius: '8px' }} onClick={() => {
                                                         setActiveTab('history');
                                                         setExpandedExpenseId(exp?.id || null);
@@ -273,7 +273,7 @@ export const ExpensesPage: React.FC = () => {
                                                     <small style={{ color: 'var(--text-secondary)' }}>Wiszący: {getMemberName(split.user_id)}</small>
                                                 </div>
                                                 <div className="expense-balance-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <span style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{split.amount.toFixed(2)} zł</span>
+                                                    <span className="money-inline" style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{split.amount.toFixed(2)} zł</span>
                                                     <button className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', borderRadius: '8px', opacity: 0.8 }} onClick={() => {
                                                         setActiveTab('history');
                                                         setExpandedExpenseId(exp?.id || null);
@@ -340,7 +340,7 @@ export const ExpensesPage: React.FC = () => {
                                 {statsThisMonth.map(stat => (
                                     <li key={stat.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                                         <span style={{ color: 'var(--text-secondary)' }}>{stat.name}</span>
-                                        <strong style={{ color: 'var(--primary-color)' }}>{stat.spent.toFixed(2)} zł</strong>
+                                        <strong className="money-inline" style={{ color: 'var(--primary-color)' }}>{stat.spent.toFixed(2)} zł</strong>
                                     </li>
                                 ))}
                                 {statsThisMonth.length === 0 && <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Brak wydatków w tym miesiącu.</span>}
@@ -367,7 +367,7 @@ export const ExpensesPage: React.FC = () => {
                                             <h4 style={{ margin: '0 0 0.25rem 0' }}>{exp.title}</h4>
                                             <small style={{ color: 'var(--text-secondary)' }}>Kupił: {getMemberName(exp.payer_id)}</small>
                                         </div>
-                                        <span style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>{exp.amount.toFixed(2)} zł</span>
+                                        <span className="money-inline" style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>{exp.amount.toFixed(2)} zł</span>
                                     </li>
                                 ))}
                                 {expenses.length > 5 && (
