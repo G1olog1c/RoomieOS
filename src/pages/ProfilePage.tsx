@@ -51,8 +51,8 @@ export const ProfilePage: React.FC = () => {
     const myRole = members.find(m => m.user_id === user?.id)?.role;
 
     return (
-        <div className="main-content animate-fade-in" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="main-content animate-fade-in page-shell profile-page" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <div className="page-header-row" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                 <Link to="/">
                     <button className="btn-secondary" style={{ padding: '0.6rem' }}>
                         <ArrowLeft size={18} />
@@ -63,7 +63,7 @@ export const ProfilePage: React.FC = () => {
 
             <div style={{ display: 'grid', gap: '2rem' }}>
                 <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div className="profile-card-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                             <User size={32} color="var(--primary-color)" />
                         </div>

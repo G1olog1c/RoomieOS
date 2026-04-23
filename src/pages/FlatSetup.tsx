@@ -36,8 +36,8 @@ export const FlatSetup: React.FC = () => {
   };
 
   return (
-    <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <div className="glass-panel animate-fade-in" style={{ padding: '3rem 2rem', width: '100%', maxWidth: '500px' }}>
+    <div className="app-container flat-setup-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <div className="glass-panel animate-fade-in flat-setup-card" style={{ padding: '3rem 2rem', width: '100%', maxWidth: '500px' }}>
         
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)', marginBottom: '1.25rem' }}>
@@ -47,7 +47,7 @@ export const FlatSetup: React.FC = () => {
           <p>Musisz utworzyć nowe mieszkanie lub dołączyć do istniejącego.</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="flat-setup-tabs" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
           <button 
             className={`btn-secondary ${activeTab === 'create' ? 'active-tab' : ''}`} 
             style={{ flex: 1, justifyContent: 'center', background: activeTab === 'create' ? 'rgba(99,102,241,0.2)' : '' }}

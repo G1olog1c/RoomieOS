@@ -32,6 +32,7 @@ interface ExpenseState {
   fetchExpenses: () => Promise<void>;
   addExpense: (title: string, amount: number, splitWithIds: string[], expenseType: 'Zakupy' | 'Rachunki' | 'Inne') => Promise<boolean>;
   settleDebt: (splitId: string, note?: string) => Promise<boolean>;
+  deleteExpense: (expenseId: string) => Promise<boolean>;
   calculateOptimalDebts: () => { from: string; to: string; amount: number }[];
   simplifyDebts: (opts?: { settleNewDebts?: boolean; settleNote?: string }) => Promise<{
     insertedDebts: { expenseId: string; splitId: string; from: string; to: string; amount: number }[];
@@ -134,6 +135,33 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         
       if (error) throw error;
       
+      await get().fetchExpenses();
+      return true;
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      return false;
+    }
+  },
+
+  deleteExpense: async (expenseId) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Delete all splits for this expense first
+      const { error: splitsError } = await supabase
+        .from('expense_splits')
+        .delete()
+        .eq('expense_id', expenseId);
+
+      if (splitsError) throw splitsError;
+
+      // Delete the expense
+      const { error: expenseError } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', expenseId);
+
+      if (expenseError) throw expenseError;
+
       await get().fetchExpenses();
       return true;
     } catch (err: any) {

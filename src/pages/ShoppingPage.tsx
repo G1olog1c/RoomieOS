@@ -38,8 +38,8 @@ export const ShoppingPage: React.FC = () => {
     const completedItems = items.filter(i => i.is_completed);
 
     return (
-        <div className="main-content animate-fade-in" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="main-content animate-fade-in page-shell shopping-page" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <div className="page-header-row" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                 <Link to="/">
                     <button className="btn-secondary" style={{ padding: '0.6rem' }}>
                         <ArrowLeft size={18} />
@@ -55,7 +55,7 @@ export const ShoppingPage: React.FC = () => {
                         <span>{validationError}</span>
                     </div>
                 )}
-                <form onSubmit={handleAdd} style={{ display: 'flex', gap: '1rem' }}>
+                <form onSubmit={handleAdd} className="shopping-add-form" style={{ display: 'flex', gap: '1rem' }}>
                     <input 
                         type="text" 
                         className="input-field" 
@@ -80,8 +80,8 @@ export const ShoppingPage: React.FC = () => {
                 ) : (
                     <ul style={{ listStyle: 'none', padding: 0 }}>
                         {activeItems.map(item => (
-                            <li key={item.id} className="animate-fade-in hover-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', marginBottom: '0.75rem', border: '1px solid var(--surface-border)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <li key={item.id} className="animate-fade-in hover-card shopping-item-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', marginBottom: '0.75rem', border: '1px solid var(--surface-border)' }}>
+                                <div className="shopping-item-main" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <button 
                                         onClick={() => toggleItemStatus(item.id, item.is_completed)}
                                         style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid var(--primary-color)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -102,8 +102,8 @@ export const ShoppingPage: React.FC = () => {
                         <h4 style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>Ostatnio kupione ({completedItems.length})</h4>
                         <ul style={{ listStyle: 'none', padding: 0, opacity: 0.6 }}>
                             {completedItems.map(item => (
-                                <li key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', margin: '0.5rem 0' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <li key={item.id} className="shopping-item-row shopping-item-row-completed" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', margin: '0.5rem 0' }}>
+                                    <div className="shopping-item-main" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <button 
                                             onClick={() => toggleItemStatus(item.id, item.is_completed)}
                                             style={{ width: '24px', height: '24px', borderRadius: '50%', border: 'none', background: 'var(--success-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}

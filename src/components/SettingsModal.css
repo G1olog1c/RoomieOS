@@ -1,15 +1,18 @@
 .settings-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
+  min-height: 100vh;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem 1rem;
 }
 
 .settings-modal {
@@ -23,6 +26,16 @@
   flex-direction: column;
   max-height: 90vh;
   overflow: hidden;
+  margin: auto;
+}
+
+.smart-settlement-backdrop {
+  z-index: 1100;
+}
+
+.smart-settlement-modal {
+  position: sticky;
+  top: 2rem;
 }
 
 .scale-in {
@@ -239,4 +252,56 @@
   border: 1px dashed var(--surface-border);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .settings-backdrop {
+    padding: 1rem 0.75rem;
+  }
+
+  .settings-modal {
+    width: 100%;
+    max-height: calc(100vh - 2rem);
+    border-radius: 14px;
+  }
+
+  .settings-header {
+    padding: 1rem;
+  }
+
+  .settings-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .settings-content {
+    padding: 1rem;
+  }
+
+  .tab-btn {
+    min-width: max-content;
+    padding: 0.9rem 1rem;
+  }
+
+  .row-group {
+    flex-direction: column;
+  }
+
+  .actions-row {
+    flex-direction: column;
+  }
+
+  .actions-row button,
+  .btn-danger,
+  .current-room-card .btn-secondary {
+    width: 100%;
+  }
+
+  .current-room-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .invite-box {
+    flex-wrap: wrap;
+  }
 }

@@ -33,13 +33,13 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="main-content animate-fade-in">
+    <div className="main-content animate-fade-in dashboard-page">
       <nav className="navbar">
-        <div className="navbar-brand">
+        <div className="navbar-brand dashboard-navbar-brand">
           <Home size={24} color="#6366f1" />
           <span>{currentFlat?.name || 'Roomies'}</span>
           {currentFlat && (
-            <span style={{ 
+            <span className="dashboard-invite-chip" style={{ 
               fontSize: '0.75rem', 
               background: 'rgba(99,102,241,0.1)', 
               color: 'var(--primary-color)',
@@ -52,8 +52,8 @@ export const Dashboard: React.FC = () => {
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+        <div className="dashboard-navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span className="dashboard-user-label" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             Zalogowano jako: <strong style={{ color: 'var(--text-primary)' }}>{user?.user_metadata?.display_name || email}</strong>
           </span>
           <button className="btn-secondary" onClick={() => setIsSettingsOpen(true)} style={{ padding: '0.5rem', width: '36px', height: '36px', display: 'flex', justifyContent: 'center', alignItems: 'center' }} title="Ustawienia">
@@ -72,7 +72,7 @@ export const Dashboard: React.FC = () => {
           <p>Twoje mieszkanie w jednym miejscu.</p>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        <div className="dashboard-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
           <Link to="/finanse" style={{ textDecoration: 'none', color: 'inherit' }}>
             <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer', position: 'relative' }}>
               {expensesRachunkiCount > 0 && (

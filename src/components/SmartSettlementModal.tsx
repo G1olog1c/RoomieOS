@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Calculator, CheckCircle, Info, Pencil } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Calculator, CheckCircle, Info, Pencil, ChevronDown } from 'lucide-react';
 import { useExpenseStore } from '../store/expenseStore';
 import { useFlatStore } from '../store/flatStore';
 import { useAuthStore } from '../store/authStore';
-import type { Expense } from '../store/expenseStore';
-import { ExpenseDetailsModal } from './ExpenseDetailsModal';
+import { ExpenseDetailsContent } from './ExpenseDetailsContent';
 
 interface SmartSettlementModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
   const [insertedDebts, setInsertedDebts] = useState<{ expenseId: string; splitId: string; from: string; to: string; amount: number }[]>([]);
   const [settleNewDebts, setSettleNewDebts] = useState(false);
   const [settleNewNote, setSettleNewNote] = useState('');
-  const [detailsExpense, setDetailsExpense] = useState<Expense | null>(null);
+  const [expandedDetailsId, setExpandedDetailsId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,7 +29,7 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
       setInsertedDebts([]);
       setSettleNewDebts(false);
       setSettleNewNote('');
-      setDetailsExpense(null);
+      setExpandedDetailsId(null);
     }
   }, [isOpen, calculateOptimalDebts]);
 
@@ -60,9 +60,9 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
     }
   };
 
-  return (
-    <div className="settings-backdrop animate-fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="settings-modal scale-in" style={{ maxWidth: '500px' }}>
+  return createPortal(
+    <div className="settings-backdrop smart-settlement-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="settings-modal smart-settlement-modal scale-in" style={{ maxWidth: '500px' }}>
         <div className="settings-header">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
              <Calculator size={24} color="var(--primary-color)" /> Smart Settlement
@@ -118,10 +118,16 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
                               ) : (
                                 <button
                                   className="btn-secondary"
-                                  style={{ padding: '0.4rem 0.7rem', fontSize: '0.85rem', borderRadius: 8 }}
-                                  onClick={() => setDetailsExpense(expenses.find(e => e.id === d.expenseId) || null)}
+                                  style={{ padding: '0.4rem 0.7rem', fontSize: '0.85rem', borderRadius: 8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                  onClick={() => setExpandedDetailsId(expandedDetailsId === d.expenseId ? null : d.expenseId)}
                                 >
-                                  Szczegóły
+                                  <ChevronDown 
+                                    size={14} 
+                                    style={{ 
+                                      transform: expandedDetailsId === d.expenseId ? 'rotate(180deg)' : 'rotate(0deg)',
+                                      transition: 'transform 0.2s'
+                                    }}
+                                  />
                                 </button>
                               )}
                             </td>
@@ -130,6 +136,30 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
                       })}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {expandedDetailsId && (
+                <div style={{ 
+                  marginTop: '1.5rem', 
+                  padding: '1.5rem', 
+                  background: 'rgba(99,102,241,0.05)', 
+                  borderRadius: '8px', 
+                  border: '1px solid rgba(99,102,241,0.1)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--surface-border)' }}>
+                    <h4 style={{ margin: 0 }}>Szczegóły wydatku</h4>
+                    <button
+                      onClick={() => setExpandedDetailsId(null)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.25rem' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <ExpenseDetailsContent 
+                    expense={expenses.find(e => e.id === expandedDetailsId) || null}
+                    onDelete={() => setExpandedDetailsId(null)}
+                  />
                 </div>
               )}
             </>
@@ -216,12 +246,7 @@ export const SmartSettlementModal: React.FC<SmartSettlementModalProps> = ({ isOp
           )}
         </div>
       </div>
-
-      <ExpenseDetailsModal
-        expense={detailsExpense}
-        isOpen={!!detailsExpense}
-        onClose={() => setDetailsExpense(null)}
-      />
-    </div>
+    </div>,
+    document.body
   );
 };
