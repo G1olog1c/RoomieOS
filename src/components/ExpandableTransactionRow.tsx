@@ -11,10 +11,10 @@ interface ExpandableTransactionRowProps {
   onToggle: () => void;
 }
 
-export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> = ({ 
-  expense, 
-  isExpanded, 
-  onToggle 
+export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> = ({
+  expense,
+  isExpanded,
+  onToggle
 }) => {
   const { splits, settleDebt, expenses, deleteExpense, isLoading } = useExpenseStore();
   const { members } = useFlatStore();
@@ -56,32 +56,32 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
 
   return (
     <>
-      <tr 
+      <tr
         className="expenses-history-row"
-        style={{ 
-          borderBottom: '1px solid rgba(255,255,255,0.05)', 
-          cursor: 'pointer', 
-          transition: 'background 0.2s' 
-        }} 
+        style={{
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          cursor: 'pointer',
+          transition: 'background 0.2s'
+        }}
         onClick={onToggle}
         onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
         onMouseOut={e => e.currentTarget.style.background = 'transparent'}
       >
         <td className="expenses-history-cell expenses-history-date-cell" style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           <div className="expenses-history-date-content" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ChevronDown 
-              size={18} 
-              style={{ 
-                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', 
+            <ChevronDown
+              size={18}
+              style={{
+                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.2s',
                 minWidth: '18px'
-              }} 
+              }}
             />
-            {new Date(expense.created_at).toLocaleDateString('pl-PL', { 
-              day: '2-digit', 
-              month: '2-digit', 
-              hour: '2-digit', 
-              minute: '2-digit' 
+            {new Date(expense.created_at).toLocaleDateString('pl-PL', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
             })}
           </div>
         </td>
@@ -107,7 +107,7 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
           <td colSpan={6} style={{ padding: '1.5rem' }}>
             <div style={{ maxWidth: '100%' }}>
               {isOwner && (
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px' }}>
+                <div style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px' }}>
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting || isLoading}
@@ -115,7 +115,6 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      width: '100%',
                       padding: '0.75rem 1rem',
                       background: 'rgba(239, 68, 68, 0.2)',
                       color: 'var(--error-color)',
@@ -148,7 +147,7 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                   <Calendar size={18} /> <span style={{ fontWeight: 500 }}>Dodano:</span> {formattedDate}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)' }}>
-                  <User size={18} /> <span style={{ fontWeight: 500 }}>Zapłacił(a):</span> 
+                  <User size={18} /> <span style={{ fontWeight: 500 }}>Zapłacił(a):</span>
                   <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
                     {getMemberName(expense.payer_id)}
                   </span>
@@ -165,13 +164,13 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                   const isDebtor = split.user_id === user?.id;
 
                   return (
-                    <li 
-                      key={split.id} 
-                      style={{ 
-                        padding: '1rem', 
-                        background: split.is_paid ? 'rgba(16, 185, 129, 0.05)' : 'var(--surface-color)', 
-                        borderRadius: '8px', 
-                        border: `1px solid ${split.is_paid ? 'rgba(16, 185, 129, 0.2)' : 'var(--surface-border)'}` 
+                    <li
+                      key={split.id}
+                      style={{
+                        padding: '1rem',
+                        background: split.is_paid ? 'rgba(16, 185, 129, 0.05)' : 'var(--surface-color)',
+                        borderRadius: '8px',
+                        border: `1px solid ${split.is_paid ? 'rgba(16, 185, 129, 0.2)' : 'var(--surface-border)'}`
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -189,17 +188,17 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                       </div>
 
                       {split.note && (
-                        <div 
-                          style={{ 
-                            fontSize: '0.875rem', 
-                            color: 'var(--text-secondary)', 
-                            display: 'flex', 
-                            alignItems: 'start', 
-                            gap: '0.5rem', 
-                            marginTop: '0.5rem', 
-                            padding: '0.5rem', 
-                            background: 'rgba(0,0,0,0.1)', 
-                            borderRadius: '4px' 
+                        <div
+                          style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'start',
+                            gap: '0.5rem',
+                            marginTop: '0.5rem',
+                            padding: '0.5rem',
+                            background: 'rgba(0,0,0,0.1)',
+                            borderRadius: '4px'
                           }}
                         >
                           <AlignLeft size={14} style={{ marginTop: '0.1rem' }} /> {split.note}
@@ -208,17 +207,17 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
 
                       {!split.is_paid && (isCreditor || isDebtor) && split.user_id !== expense.payer_id && (
                         <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          <input 
-                            type="text" 
-                            className="input-field" 
-                            placeholder="Opcjonalna notatka (np. blikiem)" 
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Opcjonalna notatka (np. blikiem)"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             style={{ fontSize: '0.875rem', padding: '0.5rem' }}
                           />
-                          <button 
-                            className={isDebtor ? 'btn-primary' : 'btn-secondary'} 
+                          <button
+                            className={isDebtor ? 'btn-primary' : 'btn-secondary'}
                             style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -245,11 +244,11 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                       return (
                         <li
                           key={src.id}
-                          style={{ 
-                            padding: '0.9rem', 
-                            background: 'rgba(99,102,241,0.06)', 
-                            borderRadius: 10, 
-                            border: '1px solid rgba(99,102,241,0.14)' 
+                          style={{
+                            padding: '0.9rem',
+                            background: 'rgba(99,102,241,0.06)',
+                            borderRadius: 10,
+                            border: '1px solid rgba(99,102,241,0.14)'
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem' }}>
@@ -259,10 +258,10 @@ export const ExpandableTransactionRow: React.FC<ExpandableTransactionRowProps> =
                             </span>
                           </div>
                           <div style={{ marginTop: '0.3rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                            {new Date(src.created_at).toLocaleDateString('pl-PL', { 
-                              day: '2-digit', 
-                              month: '2-digit', 
-                              year: 'numeric' 
+                            {new Date(src.created_at).toLocaleDateString('pl-PL', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
                             })} • Zapłacił(a): {getMemberName(src.payer_id)} • <span className="money-inline">{src.amount.toFixed(2)} zł</span>
                           </div>
                         </li>
