@@ -3,6 +3,8 @@ import { Home, LogOut, Settings, Users, User, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useFlatStore } from '../store/flatStore';
+import { useExpenseStore } from '../store/expenseStore';
+import { useShoppingStore } from '../store/shoppingStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { SettingsModal } from '../components/SettingsModal';
 import { NotificationsModal } from '../components/NotificationsModal';
@@ -11,6 +13,8 @@ export const Dashboard: React.FC = () => {
   const { user, signOut } = useAuthStore();
   const { currentFlat, members, removeMember } = useFlatStore();
   const { expensesRachunkiCount, shoppingCount, shoppingHasNew, fetchCounts } = useNotificationStore();
+  const { expenses, splits, fetchExpenses } = useExpenseStore();
+  const { items: shoppingItems, fetchItems } = useShoppingStore();
   const [email, setEmail] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -22,8 +26,37 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (currentFlat) {
       fetchCounts();
+      fetchExpenses();
+      fetchItems();
     }
-  }, [currentFlat, fetchCounts]);
+  }, [currentFlat, fetchCounts, fetchExpenses, fetchItems]);
+
+  const pendingShoppingItems = shoppingItems.filter(item => !item.is_completed);
+  const shoppingPreviewItems = pendingShoppingItems.slice(0, 3);
+  const shoppingSummaryText = pendingShoppingItems.length > 0
+    ? `${pendingShoppingItems.length} niekupionych pozycji`
+    : 'Brak niekupionych przedmiotów';
+
+  const currentUserId = user?.id;
+  const totalOwe = splits
+    .filter(split => !split.is_paid && split.user_id === currentUserId)
+    .reduce((sum, split) => {
+      const expense = expenses.find(exp => exp.id === split.expense_id);
+      return expense && expense.payer_id !== split.user_id ? sum + split.amount : sum;
+    }, 0);
+
+  const totalOwedToMe = splits
+    .filter(split => !split.is_paid)
+    .reduce((sum, split) => {
+      const expense = expenses.find(exp => exp.id === split.expense_id);
+      return expense && expense.payer_id === currentUserId && expense.payer_id !== split.user_id ? sum + split.amount : sum;
+    }, 0);
+
+  const financeSummaryText = totalOwe > 0
+    ? `Masz do zapłaty ${totalOwe.toFixed(2)} zł`
+    : totalOwedToMe > 0
+      ? `Masz do odebrania ${totalOwedToMe.toFixed(2)} zł`
+      : 'Brak otwartych długów';
 
   const currentUserRole = members.find(m => m.user_id === user?.id)?.role;
   const isAdmin = currentUserRole === 'admin';
@@ -74,7 +107,7 @@ export const Dashboard: React.FC = () => {
         
         <div className="dashboard-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
           <Link to="/finanse" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer', position: 'relative' }}>
+            <div className="glass-panel hover-card dashboard-card">
               {expensesRachunkiCount > 0 && (
                 <span
                   className="notification-badge animate-fade-in"
@@ -113,7 +146,11 @@ export const Dashboard: React.FC = () => {
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                  💸 Finanse
               </h3>
-              <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>Wejdź w moduł rozliczeń (Splitwise). Dodaj paragon i sprawdź bilans długów.</p>
+              <div className="dashboard-card-summary">
+                <strong style={{ display: 'block', marginBottom: '0.5rem' }}>Szybki stan finansów</strong>
+                <p style={{ margin: 0, fontSize: '0.95rem' }}>{financeSummaryText}</p>
+              </div>
+              <p className="dashboard-card-footer">Kliknij, aby zobaczyć szczegóły rozliczeń i pełny bilans długów.</p>
             </div>
           </Link>
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
@@ -153,7 +190,7 @@ export const Dashboard: React.FC = () => {
             </ul>
           </div>
           <Link to="/zakupy" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="glass-panel hover-card" style={{ padding: '1.5rem', height: '100%', cursor: 'pointer', position: 'relative' }}>
+            <div className="glass-panel hover-card dashboard-card">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   🛒 Lista zakupów
                   {shoppingCount > 0 && (
@@ -183,7 +220,22 @@ export const Dashboard: React.FC = () => {
                      </span>
                  )}
               </h3>
-              <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>Dodawaj braki na wspólną tablicę i odhaczaj po stronie sklepu w czasie rzeczywistym.</p>
+              <div className="dashboard-card-preview">
+                <strong style={{ display: 'block', marginBottom: '0.5rem' }}>Nie kupiono jeszcze</strong>
+                {pendingShoppingItems.length > 0 ? (
+                  <ul>
+                    {shoppingPreviewItems.map(item => (
+                      <li key={item.id} className="dashboard-card-preview-item">• {item.title}</li>
+                    ))}
+                    {pendingShoppingItems.length > shoppingPreviewItems.length && (
+                      <li style={{ marginTop: '0.5rem', fontWeight: 600 }}>i jeszcze {pendingShoppingItems.length - shoppingPreviewItems.length} innych</li>
+                    )}
+                  </ul>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '0.95rem' }}>{shoppingSummaryText}</p>
+                )}
+              </div>
+              <p className="dashboard-card-footer">Kliknij kartę, aby przejść do pełnej listy zakupów.</p>
             </div>
           </Link>
         </div>

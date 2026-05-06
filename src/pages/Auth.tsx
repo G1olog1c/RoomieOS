@@ -7,6 +7,7 @@ export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,6 +24,9 @@ export const Auth: React.FC = () => {
     }
     if (password.length < 6) {
       return 'Hasło musi zawierać co najmniej 6 znaków.';
+    }
+    if (!isLogin && password !== confirmPassword) {
+      return 'Hasła muszą być takie same.';
     }
     return null;
   };
@@ -129,7 +133,7 @@ export const Auth: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '2rem' }}>
+          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
             <label htmlFor="password">Hasło</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
@@ -145,6 +149,25 @@ export const Auth: React.FC = () => {
               />
             </div>
           </div>
+
+          {!isLogin && (
+            <div className="form-group" style={{ marginBottom: '2rem' }}>
+              <label htmlFor="confirmPassword">Powtórz hasło</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={18} style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  className="input-field"
+                  style={{ paddingLeft: '3rem' }}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Przetwarzanie...' : (isLogin ? 'Zaloguj się' : 'Zarejestruj się')}
@@ -162,6 +185,8 @@ export const Auth: React.FC = () => {
               setIsLogin(!isLogin);
               setError(null);
               setSuccessMsg(null);
+              setPassword('');
+              setConfirmPassword('');
             }}
           >
             {isLogin ? 'Zarejestruj się' : 'Zaloguj się'}

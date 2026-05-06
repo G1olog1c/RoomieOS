@@ -298,7 +298,63 @@ p {
 }
 
 .dashboard-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
   align-items: stretch;
+}
+
+.dashboard-card {
+  padding: 1.5rem;
+  height: 100%;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.dashboard-card-summary,
+.dashboard-card-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.dashboard-card-summary {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.dashboard-card-preview {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.dashboard-card-preview ul {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.dashboard-card-preview-item {
+  margin-bottom: 0.45rem;
+  color: var(--text-secondary);
+}
+
+.dashboard-card-footer {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+}
+
+.dashboard-invite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .expenses-summary-grid {
