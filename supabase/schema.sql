@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS public.flat_members (
     role TEXT CHECK (role IN ('admin', 'member')) DEFAULT 'member',
     last_seen_expenses TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     last_seen_shopping TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    last_seen_chores TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    last_seen_chat TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(flat_id, user_id)
 );
@@ -49,8 +51,21 @@ CREATE TABLE IF NOT EXISTS public.chores (
     flat_id UUID REFERENCES public.flats(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     assigned_to UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     status TEXT CHECK (status IN ('todo', 'in_progress', 'done')) DEFAULT 'todo',
     due_date TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.flat_members ADD COLUMN IF NOT EXISTS last_seen_chores TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.chores ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.flat_members ADD COLUMN IF NOT EXISTS last_seen_chat TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+
+CREATE TABLE IF NOT EXISTS public.chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    flat_id UUID REFERENCES public.flats(id) ON DELETE CASCADE NOT NULL,
+    sender_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    content TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -68,6 +83,7 @@ ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expense_splits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.flats FOR ALL TO authenticated USING (true);
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.flat_members FOR ALL TO authenticated USING (true);
@@ -75,6 +91,7 @@ CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.expenses FOR ALL TO 
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.expense_splits FOR ALL TO authenticated USING (true);
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.chores FOR ALL TO authenticated USING (true);
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.notes FOR ALL TO authenticated USING (true);
+CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.chat_messages FOR ALL TO authenticated USING (true);
 
 CREATE TABLE IF NOT EXISTS public.shopping_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -87,6 +104,18 @@ CREATE TABLE IF NOT EXISTS public.shopping_items (
 
 ALTER TABLE public.shopping_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Zezwól na wszystko autoryzowanym" ON public.shopping_items FOR ALL TO authenticated USING (true);
+
+-- Realtime (Supabase): włącz replikację dla tabel używanych w aplikacji.
+-- Dashboard → Database → Publications → supabase_realtime → zaznacz tabele
+-- albo w SQL Editor (komunikat „already member” przy ponownym uruchomieniu — zignoruj):
+
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.flats;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.flat_members;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.expenses;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.expense_splits;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.shopping_items;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.chores;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
 
 -- RPC: profile list for flat members (Dashboard / UI)
 DROP FUNCTION IF EXISTS public.get_flat_members_profiles(UUID);
@@ -133,3 +162,5 @@ ALTER TABLE public.shopping_items ADD CONSTRAINT check_shopping_title_not_empty 
 -- 4. Obowiązki (Chores) i Notatki (Notes)
 ALTER TABLE public.chores ADD CONSTRAINT check_chore_title_not_empty CHECK (trim(title) != '');
 ALTER TABLE public.notes ADD CONSTRAINT check_note_content_not_empty CHECK (trim(content) != '');
+ALTER TABLE public.chat_messages DROP CONSTRAINT IF EXISTS check_chat_content_length;
+ALTER TABLE public.chat_messages ADD CONSTRAINT check_chat_content_length CHECK (trim(content) != '' AND char_length(content) <= 4000);

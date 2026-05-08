@@ -4,10 +4,18 @@ import { Auth } from './pages/Auth';
 import { Dashboard } from './pages/Dashboard';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { ShoppingPage } from './pages/ShoppingPage';
+import { ChoresPage } from './pages/ChoresPage';
+import { ChatPage } from './pages/ChatPage';
 import { FlatSetup } from './pages/FlatSetup';
 import { ProfilePage } from './pages/ProfilePage';
 import { useAuthStore } from './store/authStore';
 import { useFlatStore } from './store/flatStore';
+import { useFlatRealtimeSync } from './hooks/useFlatRealtimeSync';
+
+function FlatRealtimeBridge() {
+  useFlatRealtimeSync();
+  return null;
+}
 
 const App: React.FC = () => {
   const { user, isLoading: isAuthLoading, initialize } = useAuthStore();
@@ -33,52 +41,75 @@ const App: React.FC = () => {
 
   return (
     <Router basename={import.meta.env.BASE_URL}>
-      <Routes>
-        <Route
-          path="/login"
-          element={!user ? <Auth /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/finanse"
-          element={
-            user ? (
-              currentFlat ? <ExpensesPage /> : <FlatSetup />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/zakupy"
-          element={
-            user ? (
-              currentFlat ? <ShoppingPage /> : <FlatSetup />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route 
-          path="/profil" 
-          element={
-            user ? (
-              <ProfilePage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        <Route 
-          path="/" 
-          element={
-            user ? (
-              currentFlat ? <Dashboard /> : <FlatSetup />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-      </Routes>
+      <>
+        <FlatRealtimeBridge />
+        <Routes>
+          <Route
+            path="/login"
+            element={!user ? <Auth /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/finanse"
+            element={
+              user ? (
+                currentFlat ? <ExpensesPage /> : <FlatSetup />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/zakupy"
+            element={
+              user ? (
+                currentFlat ? <ShoppingPage /> : <FlatSetup />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/harmonogram"
+            element={
+              user ? (
+                currentFlat ? <ChoresPage /> : <FlatSetup />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/czat"
+            element={
+              user ? (
+                currentFlat ? <ChatPage /> : <FlatSetup />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/profil"
+            element={
+              user ? (
+                <ProfilePage />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/"
+            element={
+              user ? (
+                currentFlat ? <Dashboard /> : <FlatSetup />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+        </Routes>
+      </>
     </Router>
   );
 };

@@ -12,7 +12,8 @@ interface NotificationsModalProps {
 
 type NotificationEvent =
   | { id: string; kind: 'expenses'; created_at: string; message: string; expenseType: 'Zakupy' | 'Rachunki' | 'Inne' }
-  | { id: string; kind: 'shopping'; created_at: string; message: string };
+  | { id: string; kind: 'shopping'; created_at: string; message: string }
+  | { id: string; kind: 'chores'; created_at: string; message: string };
 
 type ExpenseRow = {
   id: string;
@@ -28,10 +29,17 @@ type ShoppingItemRow = {
   created_at: string;
 };
 
+type ChoreNotifRow = {
+  id: string;
+  created_by: string | null;
+  title: string;
+  created_at: string;
+};
+
 export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
   const { currentFlat, members } = useFlatStore();
-  const { markAsSeen, fetchCounts } = useNotificationStore();
+  const { markAllModulesSeen } = useNotificationStore();
 
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,7 +60,7 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
       try {
         const { data: memberData, error: memberError } = await supabase
           .from('flat_members')
-          .select('last_seen_expenses, last_seen_shopping')
+          .select('last_seen_expenses, last_seen_shopping, last_seen_chores')
           .eq('flat_id', currentFlat.id)
           .eq('user_id', user.id)
           .single();
@@ -61,8 +69,9 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
 
         const lastSeenExpenses = memberData?.last_seen_expenses || new Date(0).toISOString();
         const lastSeenShopping = memberData?.last_seen_shopping || new Date(0).toISOString();
+        const lastSeenChores = memberData?.last_seen_chores || new Date(0).toISOString();
 
-        const [expRes, shopRes] = await Promise.all([
+        const [expRes, shopRes, choreRes] = await Promise.all([
           supabase
             .from('expenses')
             .select('*')
@@ -79,10 +88,20 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
             .gt('created_at', lastSeenShopping)
             .order('created_at', { ascending: false })
             .limit(20),
+          supabase
+            .from('chores')
+            .select('*')
+            .eq('flat_id', currentFlat.id)
+            .in('status', ['todo', 'in_progress'])
+            .gt('created_at', lastSeenChores)
+            .or(`created_by.is.null,created_by.neq.${user.id}`)
+            .order('created_at', { ascending: false })
+            .limit(20),
         ]);
 
         if (expRes.error) throw expRes.error;
         if (shopRes.error) throw shopRes.error;
+        if (choreRes.error) throw choreRes.error;
 
         const expenseEvents: NotificationEvent[] = ((expRes.data || []) as ExpenseRow[]).map((e) => {
           const payerName = memberNameById.get(e.payer_id) || `Konto ${String(e.payer_id).substring(0, 4)}`;
@@ -103,11 +122,31 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
             id: `shop-${i.id}`,
             kind: 'shopping',
             created_at: i.created_at,
-            message: `${adderName} dodał "${i.title}" na listę`,
+            message: `${adderName} dodał „${i.title}” na listę`,
           };
         });
 
-        const merged = [...expenseEvents, ...shoppingEvents].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const choreEvents: NotificationEvent[] = ((choreRes.data || []) as ChoreNotifRow[]).map((c) => {
+          if (c.created_by) {
+            const name = memberNameById.get(c.created_by) || `Konto ${String(c.created_by).substring(0, 4)}`;
+            return {
+              id: `chore-${c.id}`,
+              kind: 'chores',
+              created_at: c.created_at,
+              message: `${name} dodał zadanie „${c.title}”`,
+            };
+          }
+          return {
+            id: `chore-${c.id}`,
+            kind: 'chores',
+            created_at: c.created_at,
+            message: `Nowe zadanie w harmonogramie: „${c.title}”`,
+          };
+        });
+
+        const merged = [...expenseEvents, ...shoppingEvents, ...choreEvents].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
         setEvents(merged);
       } catch (err) {
         console.error('Error loading notifications:', err);
@@ -120,9 +159,7 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
   }, [isOpen, user, currentFlat, memberNameById]);
 
   const handleMarkAll = async () => {
-    await markAsSeen('expenses');
-    await markAsSeen('shopping');
-    await fetchCounts();
+    await markAllModulesSeen();
     onClose();
   };
 
@@ -132,7 +169,17 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
     newExpenses: events.filter((e) => e.kind === 'expenses').length,
     newZakupy: events.filter((e) => e.kind === 'expenses' && e.expenseType === 'Zakupy').length,
     newRachunki: events.filter((e) => e.kind === 'expenses' && e.expenseType === 'Rachunki').length,
-    newZakupyList: events.filter((e) => e.kind === 'shopping').length,
+    newShopping: events.filter((e) => e.kind === 'shopping').length,
+    newChores: events.filter((e) => e.kind === 'chores').length,
+  };
+
+  const hasAnySummary =
+    summary.newExpenses > 0 || summary.newShopping > 0 || summary.newChores > 0;
+
+  const kindLabel = (k: NotificationEvent['kind']) => {
+    if (k === 'expenses') return 'Finanse';
+    if (k === 'shopping') return 'Zakupy';
+    return 'Harmonogram';
   };
 
   return (
@@ -149,11 +196,12 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
             <div>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Zmiany od Twojej ostatniej wizyty
+                Zmiany od Twojej ostatniej wizyty w modułach
               </p>
-              {summary.newExpenses > 0 || summary.newZakupyList > 0 ? (
+              {hasAnySummary ? (
                 <p style={{ margin: '0.35rem 0 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  {summary.newExpenses} nowych rozliczeń (zakupy: {summary.newZakupy}, rachunki: {summary.newRachunki}) • {summary.newZakupyList} nowych pozycji na liście zakupów
+                  Finanse: {summary.newExpenses} nowych rozliczeń (zakupy: {summary.newZakupy}, rachunki: {summary.newRachunki}) •
+                  Zakupy: {summary.newShopping} nowych pozycji • Harmonogram: {summary.newChores} nowych zadań
                 </p>
               ) : null}
             </div>
@@ -171,14 +219,22 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
               {events.map((e) => (
                 <li
                   key={e.id}
-                  style={{ padding: '1rem', borderRadius: 10, border: '1px solid var(--surface-border)', background: 'rgba(255,255,255,0.03)' }}
+                  style={{
+                    padding: '1rem',
+                    borderRadius: 10,
+                    border: '1px solid var(--surface-border)',
+                    background: 'rgba(255,255,255,0.03)',
+                  }}
                 >
-                  <div style={{ fontWeight: 700 }}>
-                        {e.kind === 'expenses' ? 'Rozliczenia' : 'Zakupy'}
-                  </div>
+                  <div style={{ fontWeight: 700 }}>{kindLabel(e.kind)}</div>
                   <div style={{ marginTop: '0.35rem' }}>{e.message}</div>
                   <div style={{ marginTop: '0.35rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    {new Date(e.created_at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(e.created_at).toLocaleString('pl-PL', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </div>
                 </li>
               ))}
@@ -189,4 +245,3 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, 
     </div>
   );
 };
-
